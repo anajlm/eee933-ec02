@@ -5,6 +5,7 @@ library(ggplot2)
 
 # Carregar os dados e reordena os dados cronologicamente:
 dados <- read.csv("DadosAcoesGrupoH.csv")
+colnames(dados) <- paste0('Acao_', 1:5)
 dados <- dados[nrow(dados):1, ]
 
 # Dataframe dos retornos
