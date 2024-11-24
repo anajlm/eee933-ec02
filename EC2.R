@@ -31,7 +31,7 @@ dados_dataframe <- data.frame(
   Retorno = as.vector(as.matrix(retornos[, -ncol(retornos)])) 
 )
 # Visualização dos retornos, distribuição:
-png("graficos/retorno_dist", width = 800, height = 600)
+png("graficos/retorno_dist.png", width = 800, height = 600)
 retorno_dist <- ggplot(dados_dataframe, aes(x = Acao,
                                             y = Retorno,
                                             fill = Acao)) + geom_boxplot() + geom_point() +
@@ -40,7 +40,7 @@ print(retorno_dist)
 dev.off()
 
 # Visualização dos retornos, serie temporal:
-png("graficos/retorno_mensal", width = 800, height = 400)
+png("graficos/retorno_mensal.png", width = 800, height = 400)
 plot(NULL, xlim = c(1, nrow(retornos)), ylim = range(dados_dataframe$Retorno, na.rm = TRUE),
      xlab = "Tempo (Meses)", ylab = "Retorno Mensal", main = "Retornos Mensais por Ação")
 grid(col = "gray", lty = "dotted", lwd = 0.75)
@@ -67,7 +67,7 @@ dados_dataframe_acumulados <- data.frame(
   Acao = rep(colnames(retornos_acumulados)[-ncol(retornos_acumulados)], each = nrow(retornos_acumulados)),
   RetornoAcumulado = as.vector(as.matrix(retornos_acumulados[, -ncol(retornos_acumulados)]))
 )
-png("graficos/retorno_acumulado", width = 800, height = 400)
+png("graficos/retorno_acumulado.png", width = 800, height = 400)
 plot(NULL, xlim = c(1, nrow(retornos_acumulados)), ylim = range(dados_dataframe_acumulados$RetornoAcumulado, na.rm = TRUE),
      xlab = "Tempo (Meses)", ylab = "Retorno Acumulado", main = "Retorno Acumulado por Ação")
 grid(col = "gray", lty = "dotted", lwd = 0.75)
@@ -80,7 +80,7 @@ for (i in 1:length(acoes_acumuladas)) {
   lines(linhas_acao$Mes, linhas_acao$RetornoAcumulado, col = cores_acoes_acumuladas[i], type = "o", pch = 16)
 }
 
-legend("topright", legend = acoes_acumuladas, col = cores_acoes_acumuladas, lty = 1, pch = 16, title = "Ações")
+legend("topleft", legend = acoes_acumuladas, col = cores_acoes_acumuladas, lty = 1, pch = 16, title = "Ações")
 dev.off()
 
 # TESTES E HIPOTESES ESTATISTICAS ##############################################
@@ -138,7 +138,7 @@ dev.off()
 # CHECANDO QUAL MELHOR AÇÃO PARA SE INVESTIR 2 A 2 ###################################################
 # Tukey test:
 TukeyHSD_test = TukeyHSD(anova)
-
+summary(TukeyHSD_test$Acao)
 tukey_dataframe <- as.data.frame(TukeyHSD_test$Acao)
 tukey_dataframe$comparacao <- rownames(tukey_dataframe)
 png("graficos/comparacoes", width = 800, height = 400)
