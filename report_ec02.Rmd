@@ -35,7 +35,7 @@ if (!require(multcomp, quietly = TRUE)){
     }
 ```
 ## Resumo
-This document provides a template for the Case Study reports. Reports should always start a short executive summary (call it an _Abstract_ if you want) to give the reader a general idea of the topic under investigation, the kind of analysis performed, the results obtained, and the general recommendations of the authors.
+Este estudo de caso realiza a análise de um conjunto de 5 ações sobre um período de 36 meses para avaliar por meio das taxas de retorno e do teste ANOVA a melhor ação para obter a melhor rentabilidade no próximo mês. 
 
 ## 1. Design do Experimento
 
@@ -65,7 +65,7 @@ Com base nesse conjunto de dados, foi calculado o retorno mensal de cada ação 
 \text{Retorno} = \frac{\text{Preço no mês atual} - \text{Preço no mês anterior}}{\text{Preço no mês anterior}}
 \]
 
-O primeiro mês de cada coluna foi descartado, pois não há um valor anterior para o cálculo do retorno. O processo resultou em uma tabela com os retornos mensais das cinco ações.
+Posto que o retorno do investimento depende do preço anterior, o primeiro mês da série temporal não terá um valor para o retorno do investimento. Isto é, o 36º mês da série, por não haver informação anterior a ele, não terá valor definido. Logo, o resultado é uma tabela com 35 retornos mensais para cada uma das cinco ações.
 
 
 ```{r loaddata}
@@ -86,7 +86,7 @@ for (j in 1:ncol(precos)) {
 retornos <- retornos[-36, ]
 
 
-retornos<-retornos[nrow(retornos):1,]
+#retornos<-retornos[nrow(retornos):1,]
 ```
 
 
@@ -122,16 +122,11 @@ model <- aov(Retorno ~ Acoes, data = retornos_melt)
 summary(model)
 ```
 
-Como resultado do teste, obteve-se uma estatística F = 34,66 e um p-valor < 2e-16. 
+Como resultado do teste, obteve-se uma estatística F = 34,45 e um p-valor < 2e-16. 
 
 Diante do resultado do teste ANOVA, podemos rejeitar, com nível de significância $\alpha = 0,05$, a hipótese nula de que as médias de retorno das cinco ações são iguais.
 
-Esse resultado indica que nem todas as ações têm retornos médios semelhantes e, para identificar quais ações possuem maior retorno médio, realizamos um teste de Tukey. Os resultados do teste de Turkey são mostrados na Figura \@ref{fig:turkey}.
-
-
-
-
-
+Esse resultado indica que nem todas as ações têm retornos médios semelhantes e, para identificar quais ações possuem maior retorno médio, realizamos um teste de Tukey, da forma de todos contra todos. Com 5 graus de liberdade - número de ações em análise, o teste de Tukey da forma todos contra todos proverá 10 análises comparativas entre as ações. Seus resultados são mostrados na Figura \@ref{fig:turkey}.
 
 ```{r turkey,results='hold',fig.width=8,echo=TRUE,message=FALSE,fig.cap="Comparações múltiplas - Turkey"}
 # Comparações múltiplas
@@ -155,7 +150,13 @@ As comparações mais significativas são entre a Ação 2 e as Ações 1, 3, 4 
 Confirmando a suspeita inicial, o teste de Tukey indica que a Ação 2 tem o maior retorno médio entre as ações analisadas, visto que as comparações entre a Ação 2 e as outras ações todas mostram diferenças significativas.
 
 ### 5. Verificação das Premissas do Modelo
-The assumptions of your test should also be validated, and possible effects of violations should also be explored.
+
+Para validar a rejeição de $H_0$, precisamos validar as premissas do teste do ANOVA. Presume-se a independência entre as séries temporais, a igualdade da variância entre os grupos (homoscedasticidade) e a normalidade de  distribuição dos resíduos do teste. 
+
+A variação das ações em uma bolsa de valores depende de fatores internos às empresas mas também de fatores externos. Esses fatores podem afetar ou não o conjunto das ações. A aleatoriedade o entendimento de que são empresas diferentes, controlados por grupos econômicos diferentes endossa a premissa de indepencência entre o comportamento das ações.
+
+O segundo passo foi analisar a normalidade dos resíduos. Para tal, foi utilizado o teste de Shapiro-Wilk e análise gráfica dos resíduos.
+
 ```{r resplots,fig.width=8,echo=TRUE,message=FALSE, fig.cap = "Residual plots for the anova model"}
 par(mfrow=c(2,2), mai=.3*c(1,1,1,1))
 plot(model,pch=16,lty=1,lwd=2)
@@ -163,31 +164,52 @@ plot(model,pch=16,lty=1,lwd=2)
 
 shapiro.test(model$residuals)
 
-
-
-
+library(car)
+qqPlot(model$residuals, 
+       pch = 16, 
+       lwd = 3, 
+       cex = 2, 
+       las = 1,
+       main = "Análise Gráfica da Normalidade dos Resíduos do modelo ANOVA")
 ```
-```{r fitmodel,results='hold'}
-fligner.test(≈ ~ Acoes, data = retornos_melt)
+
+O teste de Shapiro-Wilk nos fornece um resultado da estatística $W = 0.99337$ e p-valor de $61,36\%$. Isso nos indica que os resíduos encaixam muito bem sobre uma distribuição normal com p-valor superior a $5\%$. Pela análise gráfica, podemos observar que os resíduos de fato tem um comportamento bem ajustado em torno de uma distribuição normal, até mesmo as amostras mais distantes de seu centro. Logo, por meio destas análises podemos validar a premissa da normalidade dos resíduos do modelo. 
+
+Para validar a premissa da homoscedasticidade fo irealizado o teste de Fligner-Killen. 
+
+```{r fligner,results='hold'}
+fligner.test(Retorno ~ Acoes, data = retornos_melt)
 
 # aqui nao acusa homoscedasticidade, logo temos que justificar que 
 #ANOVA é relativamente robusto a violações modestas da homoscedas- ticidade desde que as observações sejam balanceadas.
 ```
-Não acusa homoscedasticidade;
-```{r fitmodel,results='hold'}
+O resultado deste teste nos informa que com um p-valor de $2,14\%$ devemos rejeitar a hipótese nula de que as variâncias em cada um dos grupos é a mesma. Logo este teste não nos confirma a igualdade da variância entre os grupos.
+
+Aprofundando a análise, o p-valor de $2,14\%$ para o Fligner-Killeen nos pode indicar uma violação não acentuada da igualdade das variâncias. 
+
+Seguindo para uma análise do gráfico dos resíduos pelos valores ajustados podemos observar que o comportamento de cada um dos grupos demonstra um comportamento similar para as amostras. Caso escolhamos uma amostra aleatória de qualquer um dos grupos, não podemos afirmar com certeza de qual dos grupos essa amostra pertence. 
+
+```{r analisevariancias,results='hold'}
 
 plot(x = model$fitted.values, y = model$residuals, xlab = c("Ações"), ylab="Valores",xaxt='n')
 ```
-Caso sorteemos uma amostra aletória do conjunto de dados, não conseguimos afirmar com certeza de qual dos grupos ela foi retirada pela proximidade da variância entre eles. Logo, apesar do teste de Fligner-Killeen não acusar homoscedasticidade, podemos afirmar que essa violação é moderada posto que as observações dos grupos são balanceadas.
+
+Logo, apesar do teste de Fligner-Killeen não acusar homoscedasticidade, podemos afirmar que essa violação é moderada posto que as observações dos grupos são balanceadas. Sabendo que o teste ANOVA é robusto a tais violações moderadas da variância entre os grupos, podemos manter a validação da premissa da homoscedasticidade, validando nossa análise. 
 
 
-```{r fitmodel,results='hold'}
+```{r poder,results='hold'}
 alpha<-0.05
+beta<-0.05
 vartau <- var(retornos_melt[,2])
 n<-35
-power.anova.test(groups = 5, between.var = vartau,
-                  within.var = sigma^2, sig.level = alpha,
-                  power = 1 - beta)$n
+sigma<-sd(retornos_melt[,2])
+
+power.anova.test(
+  groups = 5,
+  between.var = vartau,
+  within.var = sigma^2, 
+  sig.level = alpha,
+  power = 1 - beta)
 ```
 ### 6. Conclusões e Recomendações
 The discussion of your results, and the scientific/technical meaning of the effects detected, should be placed here. Always be sure to tie your results back to the original question of interest!
@@ -195,5 +217,5 @@ The discussion of your results, and the scientific/technical meaning of the effe
 ### 7. Atividades Específicas
 
 - Ana Julia: Design do experimento, análise estatística, análise exploratória e descrição do conjunto de dados (redação e código) 
-- Antônio: 
-- Melchior:
+- Antônio: Análise do Experimento, análise estatística e validação das premissas. 
+- Melchior: Validação das premissas do teste, revisão do relatório e dados. 
