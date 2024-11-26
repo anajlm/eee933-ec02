@@ -264,4 +264,4 @@ Como recomendações, sugere-se para melhorar o experimento reduzir o período d
 
 - Ana Julia: Design do experimento, análise estatística, análise exploratória e descrição do conjunto de dados (redação e código) 
 - Antônio: Análise do Experimento, análise estatística, validação das premissas, conclusões e recomendações, revisão do relatório e dados. 
-- Melchior: Validação das premissas do teste, revisão do relatório e dados, conclusões e recomendações. 
+- Melchior: Validação das premissas do teste,análise estatística, revisão do relatório e dados, conclusões e recomendações. 
